@@ -20,10 +20,11 @@ class PreviewImg:
 
     def __init__(self, image_dir: str):
         self.image_dir = image_dir
+        self.res_images = os.listdir(image_dir)
         self.img = Image.new("RGBA", (WIDTH, HEIGHT))
 
     def find_image_file(self, file_name: str) -> str:
-        for f in os.listdir(self.image_dir):
+        for f in self.res_images:
             if f.rsplit('.', 1)[0] == file_name:
                 return os.path.join(self.image_dir, f)
         raise FileNotFoundError
