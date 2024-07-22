@@ -149,10 +149,11 @@ class WatchFace:
                                 break
                         with Image.open(os.path.join(images_dir, sample_file)) as img:
                             width = img.width
+                        len_ = widget_info["showCount"] * (width + widget_info["spacing"]) - widget_info["spacing"]
                         if widget_info["align"] == 0:
-                            widget_info["x"] += widget_info["showCount"] * width
+                            widget_info["x"] += len_
                         elif widget_info["align"] == 2:
-                            widget_info["x"] += int(widget_info["showCount"] * width / 2)
+                            widget_info["x"] += int(len_ / 2)
                         print("Info: Correct X coordinate for %s element." % widget_name)
 
                 elements.append(widget_info)
