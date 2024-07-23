@@ -91,20 +91,20 @@ class PreviewImg:
                 self.img.paste(new_img.img, (element["x"] - int(new_img_draw_width / 2), element["y"]), new_img.img)
                 return new_img_draw_width, new_img_draw_height
         elif element["type"] == "widge_pointer":
-            box_width = element["imageRotateY"] * 2 - 1
-            box_height = box_width
-            new_img = Image.new("RGBA", size=(box_width, box_height))
-            with Image.open(self.find_image_file(element["image"])) as img_:
-                new_img.paste(img_, (element["imageRotateY"] - element["imageRotateX"], 0), img_)
+            new_img = self.__class__(self.image_dir)
+            element_tmp = element.copy()
+            element_tmp["type"] = "element"
+            new_img.add_element(element_tmp)
+            new_img = new_img.img
             if element["dataSrc"] in ("0811", "811"):  # 分针旋转60度(指向2的位置)
-                new_img = new_img.rotate(-60, center=((box_width + 1) // 2, (box_height + 1) // 2))
+                new_img = new_img.rotate(
+                    -60, center=(element["x"] + element["imageRotateX"], element["y"] + element["imageRotateY"])
+                )
             elif element["dataSrc"] == "1811":  # 秒针旋转150度(指向5的位置)
-                new_img = new_img.rotate(-150, center=((box_width + 1) // 2, (box_height + 1) // 2))
-            self.img.paste(
-                new_img,
-                (element["x"] - (element["imageRotateY"] - element["imageRotateX"]), element["y"]),
-                new_img
-            )
+                new_img = new_img.rotate(
+                    -150, center=(element["x"] + element["imageRotateX"], element["y"] + element["imageRotateY"])
+                )
+            self.img.paste(new_img, (0, 0), new_img)
             return new_img.width, new_img.height
         else:
             print("Warning: Unsupported element type: " + str(element["type"]))
