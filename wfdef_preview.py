@@ -93,9 +93,9 @@ class PreviewImg:
             new_img = Image.new("RGBA", size=(box_width, box_height))
             with Image.open(self.find_image_file(element["image"])) as img_:
                 new_img.paste(img_, (element["imageRotateY"] - element["imageRotateX"], 0), img_)
-            if element["dataSrc"] in ("0811", "811"):  # 时针旋转60度(指向2的位置)
+            if element["dataSrc"] in ("0811", "811"):  # 分针旋转60度(指向2的位置)
                 new_img = new_img.rotate(-60, center=((box_width + 1) // 2, (box_height + 1) // 2))
-            elif element["dataSrc"] == "1811":  # 时针旋转150度(指向5的位置)
+            elif element["dataSrc"] == "1811":  # 秒针旋转150度(指向5的位置)
                 new_img = new_img.rotate(-150, center=((box_width + 1) // 2, (box_height + 1) // 2))
             self.img.paste(
                 new_img,
