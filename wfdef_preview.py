@@ -33,6 +33,10 @@ class PreviewImg:
         raise FileNotFoundError
 
     def add_element(self, element: dict) -> (int, int):
+        if element["x"] >= 2 ** 15:
+            element["x"] = 2 ** 16 - element["x"]
+        if element["y"] >= 2 ** 15:
+            element["y"] = 2 ** 16 - element["y"]
         if element["type"] == "element":
             with Image.open(self.find_image_file(element["image"])) as img_:
                 try:
@@ -48,6 +52,8 @@ class PreviewImg:
             show_count = int(element["showCount"])
             align = int(element["align"])  # 0: 右对齐 1: 左对齐, 2: 居中
             spacing = int(element.get("spacing", 0))
+            if spacing >= 2 ** 7:
+                spacing = 2 ** 8 - spacing
             # show_zero = int(element["showZero"])  # unused
             if element["dataSrc"] in FORCE_ONE_BIT_DATA_SRCS:
                 show_count = 1
