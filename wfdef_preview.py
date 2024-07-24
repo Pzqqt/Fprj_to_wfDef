@@ -30,9 +30,9 @@ class PreviewImg:
         for f in self.res_images:
             if f.rsplit('.', 1)[0] == file_name:
                 return os.path.join(self.image_dir, f)
-        raise FileNotFoundError
+        raise FileNotFoundError(os.path.join(self.image_dir, file_name))
 
-    def add_element(self, element: dict) -> (int, int):
+    def add_element(self, element: dict):
         if element["x"] >= 2 ** 15:
             element["x"] = 2 ** 16 - element["x"]
         if element["y"] >= 2 ** 15:
@@ -43,59 +43,11 @@ class PreviewImg:
                     self.img.paste(img_, (element["x"], element["y"]), img_)
                 except ValueError:
                     self.img.paste(img_, (element["x"], element["y"]))
-                return img_.width, img_.height
         elif element["type"] == "widge_imagelist":
             with Image.open(self.find_image_file(element["imageList"][0])) as img_:
                 self.img.paste(img_, (element["x"], element["y"]), img_)
-                return img_.width, img_.height
         elif element["type"] == "widge_dignum":
-            show_count = int(element["showCount"])
-            align = int(element["align"])  # 0: 右对齐 1: 左对齐, 2: 居中
-            spacing = int(element.get("spacing", 0))
-            if spacing >= 2 ** 7:
-                spacing = 2 ** 8 - spacing
-            # show_zero = int(element["showZero"])  # unused
-            if element["dataSrc"] in FORCE_ONE_BIT_DATA_SRCS:
-                show_count = 1
-            if align not in (0, 1, 2):
-                raise ValueError("Invalid align value: " + str(element["align"]))
-            if align == 1:  # 左对齐
-                x_now = element["x"]
-                draw_width = 0
-                draw_height = 0
-                for image_index in range(show_count):
-                    with Image.open(self.find_image_file(element["imageList"][image_index])) as img_:
-                        self.img.paste(img_, (x_now, element["y"]), img_)
-                        x_now += img_.width + spacing
-                        draw_width += img_.width + spacing
-                        draw_height = max(draw_height, img_.height)
-                x_now -= spacing
-                draw_width -= spacing
-                if append_image := element.get("image"):
-                    with Image.open(self.find_image_file(append_image)) as img_:
-                        self.img.paste(img_, (x_now, element["y"]), img_)
-                        x_now += img_.width
-                        draw_width += img_.width
-                        draw_height = max(draw_height, img_.height)
-                return draw_width, draw_height
-            elif align == 0:  # 右对齐
-                new_img = self.__class__(self.image_dir)
-                element_cpy = element.copy()
-                element_cpy["align"] = "1"
-                element_cpy["x"] = 0
-                element_cpy["y"] = 0
-                new_img_draw_width, new_img_draw_height = new_img.add_element(element_cpy)
-                self.img.paste(new_img.img, (element["x"] - new_img_draw_width, element["y"]), new_img.img)
-                return new_img_draw_width, new_img_draw_height
-            elif align == 2:  # 居中
-                new_img = self.__class__(self.image_dir)
-                element_cpy = element.copy()
-                element_cpy["align"] = "1"
-                element_cpy["x"] = 0
-                element_cpy["y"] = 0
-                new_img_draw_width, new_img_draw_height = new_img.add_element(element_cpy)
-                self.img.paste(new_img.img, (element["x"] - int(new_img_draw_width / 2), element["y"]), new_img.img)
-                return new_img_draw_width, new_img_draw_height
+            self._add_widge_dignum(element)
         elif element["type"] == "widge_pointer":
             new_img = self.__class__(self.image_dir)
             element_tmp = element.copy()
@@ -111,10 +63,62 @@ class PreviewImg:
                     -150, center=(element["x"] + element["imageRotateX"], element["y"] + element["imageRotateY"])
                 )
             self.img.paste(new_img, (0, 0), new_img)
-            return new_img.width, new_img.height
         else:
             print("Warning: Unsupported element type: " + str(element["type"]))
-            return 0, 0
+
+    def _add_widge_dignum(self, element: dict) -> int:
+        assert element["type"] == "widge_dignum", \
+            "Error: The '_add_widge_dignum' method only supports adding widgets of type 'widge_dignum'. " \
+            "Please use the 'add_element' method instead."
+        # if element["x"] >= 2 ** 15:
+        #     element["x"] = 2 ** 16 - element["x"]
+        # if element["y"] >= 2 ** 15:
+        #     element["y"] = 2 ** 16 - element["y"]
+        show_count = int(element["showCount"])
+        align = int(element["align"])  # 0: 右对齐 1: 左对齐, 2: 居中
+        spacing = int(element.get("spacing", 0))
+        if spacing >= 2 ** 7:
+            spacing = 2 ** 8 - spacing
+        # show_zero = int(element["showZero"])  # unused
+        if element["dataSrc"] in FORCE_ONE_BIT_DATA_SRCS:
+            show_count = 1
+        if align not in (0, 1, 2):
+            raise ValueError("Invalid align value: " + str(element["align"]))
+        if align == 1:  # 左对齐
+            x_now = element["x"]
+            draw_width = 0
+            nums_index = range(show_count)
+            for image_index in nums_index:
+                with Image.open(self.find_image_file(element["imageList"][image_index])) as img_:
+                    self.img.paste(img_, (x_now, element["y"]), img_)
+                    x_now += img_.width + spacing
+                    draw_width += img_.width + spacing
+            x_now -= spacing
+            draw_width -= spacing
+            if append_image := element.get("image"):
+                with Image.open(self.find_image_file(append_image)) as img_:
+                    self.img.paste(img_, (x_now, element["y"]), img_)
+                    x_now += img_.width
+                    draw_width += img_.width
+            return draw_width
+        elif align == 0:  # 右对齐
+            new_img = self.__class__(self.image_dir)
+            element_cpy = element.copy()
+            element_cpy["align"] = "1"
+            element_cpy["x"] = 0
+            element_cpy["y"] = 0
+            new_img_draw_width = new_img._add_widge_dignum(element_cpy)
+            self.img.paste(new_img.img, (element["x"] - new_img_draw_width, element["y"]), new_img.img)
+            return new_img_draw_width
+        elif align == 2:  # 居中
+            new_img = self.__class__(self.image_dir)
+            element_cpy = element.copy()
+            element_cpy["align"] = "1"
+            element_cpy["x"] = 0
+            element_cpy["y"] = 0
+            new_img_draw_width = new_img._add_widge_dignum(element_cpy)
+            self.img.paste(new_img.img, (element["x"] - int(new_img_draw_width / 2), element["y"]), new_img.img)
+            return new_img_draw_width
 
     def save(self, *args, **kwargs):
         self.img.save(*args, **kwargs)
@@ -127,7 +131,7 @@ def main(prj_path: str):
     edit_nums = {element.get("editNum1") for element in elements if element.get("editNum1")}
     if not edit_nums:
         edit_nums = {None, }
-    for edit_num in edit_nums:
+    for edit_num in sorted(edit_nums):
         preview_img = PreviewImg(os.path.join(prj_path, "images"))
         for element in elements:
             element_edit_num = element.get("editNum1")
