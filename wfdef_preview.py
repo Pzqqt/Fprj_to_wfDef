@@ -44,7 +44,16 @@ class PreviewImg:
                 except ValueError:
                     self.img.paste(img_, (element["x"], element["y"]))
         elif element["type"] == "widge_imagelist":
-            with Image.open(self.find_image_file(element["imageList"][0])) as img_:
+            index = 0
+            if element["dataSrc"] in ("0911", "911"):
+                index = 9
+            elif element["dataSrc"] == "1211":
+                index = 2
+            elif element["dataSrc"] == "1111":
+                index = 8
+            elif element["dataSrc"] == "2012":
+                index = 5
+            with Image.open(self.find_image_file(element["imageList"][index])) as img_:
                 self.img.paste(img_, (element["x"], element["y"]), img_)
         elif element["type"] == "widge_dignum":
             self._add_widge_dignum(element)
@@ -88,6 +97,8 @@ class PreviewImg:
             x_now = element["x"]
             draw_width = 0
             nums_index = range(show_count)
+            if element["dataSrc"] in ("0841", "841") and show_count == 3:
+                nums_index = (1, 0, 0)
             for image_index in nums_index:
                 with Image.open(self.find_image_file(element["imageList"][image_index])) as img_:
                     self.img.paste(img_, (x_now, element["y"]), img_)
