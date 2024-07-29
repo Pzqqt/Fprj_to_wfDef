@@ -19,7 +19,10 @@ def remove_path(path: str):
 
 def mkdir(path: str):
     if os.path.exists(path):
-        remove_path(path)
+        if input("Warning: %s already exists. Overwrite? [y/n]" % path).upper() == "Y":
+            remove_path(path)
+        else:
+            sys.exit(1)
     os.makedirs(path)
 
 class WatchFace:
