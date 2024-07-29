@@ -89,6 +89,9 @@ class WatchFace:
 
         def _parse_elements(fprj_conf_file_, bs_obj_):
             elements = []
+            append_images = {
+                # `widget name`: `image file name`,
+            }
             for widget in bs_obj_.select("FaceProject > Screen > Widget"):
                 widget_info = {}
 
@@ -111,7 +114,12 @@ class WatchFace:
                 if re.match(r'.*?_angle\[\d+\]$', widget_name):
                     print("Warning: The rotation angle of widget '%s' will be ignored." % widget_name)
 
+                if re_match := re.match(r'.*?_ref\[(.*?)\]$', widget_name):
+                    append_images[re_match.group(1)] = self.rm_subfix(widget.get("Bitmap", ""))
+                    continue
+
                 # Attrs
+                widget_info["_orig_name"] = widget_name
                 widget_info["type"] = element_type
                 widget_info["x"] = int(widget["X"])
                 widget_info["y"] = int(widget["Y"])
@@ -158,8 +166,16 @@ class WatchFace:
                         elif widget_info["align"] == 2:
                             widget_info["x"] += int(len_ / 2)
                         print("Info: Correct X coordinate for %s element." % widget_name)
-
                 elements.append(widget_info)
+
+            for widget_name, image in append_images.items():
+                for element in elements:
+                    if element["type"] == "widge_dignum" and element["_orig_name"] == widget_name:
+                        element["image"] = image
+                        break
+            for element in elements:
+                if element.get("_orig_name"):
+                    del element["_orig_name"]
             return elements
 
         info_dic["elementsNormal"] = _parse_elements(fprj_conf_file, bs_obj)
