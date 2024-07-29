@@ -108,6 +108,9 @@ class WatchFace:
                     print("Warning: Invalid Widget: '%s', element type: %s" % (widget_name, widget["Shape"]))
                     continue
 
+                if re.match(r'.*?_angle\[\d+\]$', widget_name):
+                    print("Warning: The rotation angle of widget '%s' will be ignored." % widget_name)
+
                 # Attrs
                 widget_info["type"] = element_type
                 widget_info["x"] = int(widget["X"])
