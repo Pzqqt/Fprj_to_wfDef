@@ -21,10 +21,10 @@ FORCE_ONE_BIT_DATA_SRCS = frozenset({
 
 class PreviewImg:
 
-    def __init__(self, image_dir: str):
+    def __init__(self, image_dir: str, color=None):
         self.image_dir = image_dir
         self.res_images = os.listdir(image_dir)
-        self.img = Image.new("RGBA", (WIDTH, HEIGHT))
+        self.img = Image.new("RGBA", (WIDTH, HEIGHT), color=color)
 
     def find_image_file(self, file_name: str) -> str:
         for f in self.res_images:
@@ -143,7 +143,7 @@ def main(prj_path: str):
     if not edit_nums:
         edit_nums = {None, }
     for edit_num in sorted(edit_nums):
-        preview_img = PreviewImg(os.path.join(prj_path, "images"))
+        preview_img = PreviewImg(os.path.join(prj_path, "images"), color="black")
         for element in elements:
             element_edit_num = element.get("editNum1")
             if element_edit_num is None or element_edit_num == edit_num:
@@ -156,7 +156,7 @@ def main(prj_path: str):
         preview_img.save(os.path.join(prj_path, preview_file_name), "PNG")
 
     elements_aod = data.get("elementsAod", [])
-    preview_aod_img = PreviewImg(os.path.join(prj_path, "images_aod"))
+    preview_aod_img = PreviewImg(os.path.join(prj_path, "images_aod"), color="black")
     for element in elements_aod:
         preview_aod_img.add_element(element)
     print("Info: Drawing preview_aod.png ...")
