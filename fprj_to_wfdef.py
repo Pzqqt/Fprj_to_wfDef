@@ -107,8 +107,37 @@ class WatchFace:
                 elif widget["Shape"] == "32":
                     element_type = "widge_dignum"
                 elif widget["Shape"] == "27":
-                    print("Warning: Widget: '%s': This tool does not yet support converting "
-                          "clock hand widget. skipping..." % widget_name)
+                    pointer_props = {
+                        "Hour":   {"image": "HourHand_ImageName", "dataSrc": "0811", "maxValue": 24, "allAngle": 7200},
+                        "Minute": {"image": "MinuteHand_Image",   "dataSrc": "1011", "maxValue": 60, "allAngle": 3600},
+                        "Second": {"image": "SecondHand_Image",   "dataSrc": "1811", "maxValue": 60, "allAngle": 3600},
+                    }
+                    if bg_hand_image := widget.get("Background_ImageName"):
+                        print("Warning: Does not support rotatable background image: " + bg_hand_image)
+                    for pointer in ("Hour", "Minute", "Second"):
+                        if not (pointer_hand_image := widget.get(pointer_props[pointer]["image"])):
+                            continue
+                        pointer_hand_image_path = os.path.join(
+                            os.path.dirname(fprj_conf_file_), "images", pointer_hand_image
+                        )
+                        with Image.open(pointer_hand_image_path) as img:
+                            pointer_hand_image_width = img.width
+                            pointer_hand_image_height = img.height
+                        elements.append({
+                            "type": "widge_pointer",
+                            "x": 192 // 2 - pointer_hand_image_width // 2,
+                            "y": 490 // 2 - pointer_hand_image_height // 2,
+                            "dataSrc": pointer_props[pointer]["dataSrc"],
+                            "image": self.rm_subfix(pointer_hand_image),
+                            "maxValue": pointer_props[pointer]["maxValue"],
+                            "allAngle": pointer_props[pointer]["allAngle"],
+                            "imageRotateX": int(widget.get(pointer + "Image_rotate_xc", 0)),
+                            "imageRotateY": int(widget.get(pointer + "Image_rotate_yc", 0)),
+                        })
+                    print(
+                        "Warning: EasyFace always assumes that the pointer is in the exact center of the screen. "
+                        "You may need to adjust the pointer component's coordinates after this."
+                    )
                     continue
                 if not element_type:
                     print("Warning: Invalid Widget: '%s', element type: %s" % (widget_name, widget["Shape"]))
