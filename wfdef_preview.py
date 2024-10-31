@@ -32,6 +32,12 @@ class PreviewImg:
                 return os.path.join(self.image_dir, f)
         raise FileNotFoundError(os.path.join(self.image_dir, file_name))
 
+    def paste_image(self, image: Image.Image, coords: tuple[int, int], **kwargs):
+        try:
+            self.img.alpha_composite(image, dest=coords, **kwargs)
+        except ValueError:
+            self.img.paste(image, box=coords, **kwargs)
+
     def add_element(self, element: dict):
         if element["x"] >= 2 ** 15:
             element["x"] = 2 ** 16 - element["x"]
@@ -39,10 +45,7 @@ class PreviewImg:
             element["y"] = 2 ** 16 - element["y"]
         if element["type"] == "element":
             with Image.open(self.find_image_file(element["image"])) as img_:
-                try:
-                    self.img.alpha_composite(img_, (element["x"], element["y"]))
-                except ValueError:
-                    self.img.paste(img_, (element["x"], element["y"]))
+                self.paste_image(img_, (element["x"], element["y"]))
         elif element["type"] == "widge_imagelist":
             index = 0
             if element["dataSrc"] in ("0911", "911"):
@@ -54,7 +57,7 @@ class PreviewImg:
             elif element["dataSrc"] == "2012":
                 index = 5
             with Image.open(self.find_image_file(element["imageList"][index])) as img_:
-                self.img.alpha_composite(img_, (element["x"], element["y"]))
+                self.paste_image(img_, (element["x"], element["y"]))
         elif element["type"] == "widge_dignum":
             self._add_widge_dignum(element)
         elif element["type"] == "widge_pointer":
@@ -71,7 +74,7 @@ class PreviewImg:
                 new_img = new_img.rotate(
                     -150, center=(element["x"] + element["imageRotateX"], element["y"] + element["imageRotateY"])
                 )
-            self.img.alpha_composite(new_img, (0, 0))
+            self.paste_image(new_img, (0, 0))
         else:
             print("Warning: Unsupported element type: " + str(element["type"]))
 
@@ -101,14 +104,14 @@ class PreviewImg:
                 nums_index = (1, 0, 0)
             for image_index in nums_index:
                 with Image.open(self.find_image_file(element["imageList"][image_index])) as img_:
-                    self.img.alpha_composite(img_, (x_now, element["y"]))
+                    self.paste_image(img_, (x_now, element["y"]))
                     x_now += img_.width + spacing
                     draw_width += img_.width + spacing
             x_now -= spacing
             draw_width -= spacing
             if append_image := element.get("image"):
                 with Image.open(self.find_image_file(append_image)) as img_:
-                    self.img.alpha_composite(img_, (x_now, element["y"]))
+                    self.paste_image(img_, (x_now, element["y"]))
                     x_now += img_.width
                     draw_width += img_.width
             return draw_width
@@ -119,7 +122,7 @@ class PreviewImg:
             element_cpy["x"] = 0
             element_cpy["y"] = 0
             new_img_draw_width = new_img._add_widge_dignum(element_cpy)
-            self.img.alpha_composite(new_img.img, (element["x"] - new_img_draw_width, element["y"]))
+            self.paste_image(new_img.img, (element["x"] - new_img_draw_width, element["y"]))
             return new_img_draw_width
         elif align == 2:  # 居中
             new_img = self.__class__(self.image_dir)
@@ -128,7 +131,7 @@ class PreviewImg:
             element_cpy["x"] = 0
             element_cpy["y"] = 0
             new_img_draw_width = new_img._add_widge_dignum(element_cpy)
-            self.img.alpha_composite(new_img.img, (element["x"] - int(new_img_draw_width / 2), element["y"]))
+            self.paste_image(new_img.img, (element["x"] - int(new_img_draw_width / 2), element["y"]))
             return new_img_draw_width
 
     def save(self, *args, **kwargs):
